@@ -56,8 +56,8 @@ def get_background_color(image, bbox):
 class MaskLineAugmenter(BaseAugmenter):
     def __init__(self):
         super().__init__()
-        self.line_thickness = 5
-        self.augment_types = ['all_rows', 'all_cols', 'random_rows', 'random_cols', 'all_rows_cols']
+        self.line_thickness = 4
+        self.augment_types = ['all_rows', 'all_cols', 'all_rows_cols']
 
 
     def check(self, im: Image, rows, cols, spans, texts):
@@ -124,7 +124,7 @@ class MaskLineAugmenter(BaseAugmenter):
         return (total_rows == 0 or black_rows / total_rows > 0.7) and (total_cols == 0 or black_cols/total_cols > 0.7)
     
 
-    def mask_rows(self, im, rows, cols, spans, text_boxes, mask_type: Literal['all', 'random']='all'):
+    def mask_rows(self, im, rows, cols, spans, text_boxes, cells, mask_type: Literal['all', 'random']='all'):
         """
             remove upper row edges
         """
@@ -133,30 +133,63 @@ class MaskLineAugmenter(BaseAugmenter):
         else:
             remove_indexes = list(range(len(rows)))
 
-        rows.sort(key=lambda x: x[1])
+        rows = sorted(rows, key=lambda x: x[1])
         for row_idx, row_bb in enumerate(rows):
             if row_idx not in remove_indexes:
                 continue
             row_bb = list(map(int, row_bb))
-            # ---- split by span cells ----
-            overlap_spans = []
-            for span in spans:
-                if abs(row_bb[1]-span[1] > 5):
-                    r1, r2, iou = iou_axis(row_bb[1], row_bb[3], span[1], span[3])
+
+            overlap_span_cells = []
+            for cell in cells:
+                if not is_span_cell(cell):
+                    continue
+                span_bb = cell['bbox']
+                if abs(row_bb[1]-span_bb[1] > 5):
+                    r1, r2, iou = iou_axis(row_bb[1], row_bb[3], span_bb[1], span_bb[3])
                     if r1 > 0.7:
-                        overlap_spans.append(span)
-            if len(overlap_spans) > 0:
-                overlap_spans.sort(key=lambda x: x[0])
-                valid_ranges = [(row_bb[0], overlap_spans[0][0])]
-                for span_idx in range(len(overlap_spans)-1):
-                    cur_span = overlap_spans[span_idx]
-                    next_span = overlap_spans[span_idx+1]
-                    if next_span[0] > cur_span[2]:
-                        valid_ranges.append((cur_span[2], next_span[0]))
-                valid_ranges.append((overlap_spans[-1][2], row_bb[2]))
-            else:
-                valid_ranges = [(row_bb[0], row_bb[2])]
+                        overlap_span_cells.append(cell)
+
+
+            # # ---- split by span cells ----
+            # if len(overlap_spans) > 0:
+            #     overlap_spans.sort(key=lambda x: x[0])
+            #     valid_ranges = [(row_bb[0], overlap_spans[0][0])]
+            #     for span_idx in range(len(overlap_spans)-1):
+            #         cur_span = overlap_spans[span_idx]
+            #         next_span = overlap_spans[span_idx+1]
+            #         if next_span[0] > cur_span[2]:
+            #             valid_ranges.append((cur_span[2], next_span[0]))
+            #     valid_ranges.append((overlap_spans[-1][2], row_bb[2]))
+            # else:
+            #     valid_ranges = [(row_bb[0], row_bb[2])]
+            # valid_ranges = [list(map(int, el)) for el in valid_ranges if el[1] > el[0]]
+            # for temp_idx, valid_range in enumerate(valid_ranges):
+            #     valid_range[0] += self.line_thickness//2
+            #     valid_range[1] -= self.line_thickness//2
+            #     valid_ranges[temp_idx] = valid_range
+
+            # ---- split by columns ----
+            span_cols = []
+            for cell in overlap_span_cells:
+                for col_idx in range(cell['relation'][2], cell['relation'][3]+1):
+                    span_cols.append(col_idx)
+            cols = sorted(cols, key=lambda x: x[0])
+            # valid_ranges = [(0, cols[0][1])]
+            valid_ranges = []
+            for col_idx in range(len(cols)-1):
+                if col_idx in span_cols:
+                    continue
+                cur_col = cols[col_idx]
+                next_col = cols[col_idx+1]
+                valid_ranges.append((cur_col[0], next_col[0]))
+            if len(cols) - 1 not in span_cols:
+                valid_ranges.append((cols[-1][0], row_bb[2]))
             valid_ranges = [list(map(int, el)) for el in valid_ranges if el[1] > el[0]]
+            for temp_idx, valid_range in enumerate(valid_ranges):
+                valid_range[0] = min(valid_range[0]+1, valid_range[1]-1)
+                valid_range[1] = max(valid_range[1]-1, valid_range[0]+1)
+                valid_ranges[temp_idx] = valid_range
+
             # ---- remove upper edge ----
             for x_range in valid_ranges:
                 xmin, xmax = x_range
@@ -187,39 +220,65 @@ class MaskLineAugmenter(BaseAugmenter):
         return im
     
 
-    def mask_cols(self, im, rows, cols, spans, text_boxes, mask_type: Literal['all', 'random']='all'):
+    def mask_cols(self, im, rows, cols, spans, text_boxes, cells, mask_type: Literal['all', 'random']='all'):
         """
             remove left column edges
         """
+        cols = sorted(cols, key=lambda x: x[0])
         if mask_type == 'random':
             remove_indexes = np.random.choice(list(range(len(cols))), size=int(len(cols) * 0.5), replace=False)
         else:
             remove_indexes = list(range(len(cols)))
-
-        cols.sort(key=lambda x: x[0])
+        
         for col_idx, col_bb in enumerate(cols):
             if col_idx not in remove_indexes:
                 continue
             col_bb = list(map(int, col_bb))
-            # ---- split by span cells ----
-            overlap_spans = []
-            for span in spans:
-                if abs(span[0]-col_bb[0]) > 5:
-                    c1, c2, iou = iou_axis(col_bb[0], col_bb[2], span[0], span[2])
+
+            overlap_span_cells = []
+            for cell in cells:
+                if not is_span_cell(cell):
+                    continue
+                span_bb = cell['bbox']
+                if abs(span_bb[0]-col_bb[0]) > 5:
+                    c1, c2, iou = iou_axis(col_bb[0], col_bb[2], span_bb[0], span_bb[2])
                     if c1 > 0.7:
-                        overlap_spans.append(span)
-            if len(overlap_spans) > 0:
-                overlap_spans.sort(key=lambda x: x[1])
-                valid_ranges = [(col_bb[1], overlap_spans[0][1])]
-                for span_idx in range(len(overlap_spans)-1):
-                    cur_span = overlap_spans[span_idx]
-                    next_span = overlap_spans[span_idx+1]
-                    if next_span[1] > cur_span[3]:
-                        valid_ranges.append((cur_span[3], next_span[1]))
-                valid_ranges.append((overlap_spans[-1][3], col_bb[3]))
-            else:
-                valid_ranges = [(col_bb[1], col_bb[3])]
+                        overlap_span_cells.append(cell)
+
+            # # ---- split by span cells ----
+            # if len(overlap_spans) > 0:
+            #     overlap_spans.sort(key=lambda x: x[1])
+            #     valid_ranges = [(col_bb[1], overlap_spans[0][1])]
+            #     for span_idx in range(len(overlap_spans)-1):
+            #         cur_span = overlap_spans[span_idx]
+            #         next_span = overlap_spans[span_idx+1]
+            #         if next_span[1] > cur_span[3]:
+            #             valid_ranges.append((cur_span[3], next_span[1]))
+            #     valid_ranges.append((overlap_spans[-1][3], col_bb[3]))
+            # else:
+            #     valid_ranges = [(col_bb[1], col_bb[3])]
+            # valid_ranges = [list(map(int, el)) for el in valid_ranges if el[1] > el[0]]
+
+            # ---- split by rows and spans ----
+            span_rows = []
+            for cell in overlap_span_cells:
+                for row_idx in range(cell['relation'][0], cell['relation'][1]+1):
+                    span_rows.append(row_idx)
+            rows = sorted(rows, key=lambda x: x[1])
+            valid_ranges = []
+            for row_idx in range(len(rows)-1):
+                if row_idx in span_rows:
+                    continue
+                cur_row = rows[row_idx]
+                next_row = rows[row_idx+1]
+                valid_ranges.append((cur_row[1], next_row[1]))
+            if len(rows) - 1 not in span_rows:
+                valid_ranges.append((rows[-1][1], col_bb[3]))
             valid_ranges = [list(map(int, el)) for el in valid_ranges if el[1] > el[0]]
+            for temp_idx, valid_range in enumerate(valid_ranges):
+                valid_range[0] = min(valid_range[0]+1, valid_range[1]-1)
+                valid_range[1] = max(valid_range[1]-1, valid_range[0]+1)
+                valid_ranges[temp_idx] = valid_range
 
             # ---- remove left edge ----
             for y_range in valid_ranges:
@@ -238,7 +297,6 @@ class MaskLineAugmenter(BaseAugmenter):
                             xr1, xr2, xiou = iou_axis(text_xmin, text_xmax, nearby_bb[0], nearby_bb[2])
                             if xr2 > 0.5:
                                 is_overlap = True
-                                # print(f'overlap column {col_idx}')
                                 break
                 if not is_overlap:
                     nearby_region = im[nearby_bb[1]:nearby_bb[3], nearby_bb[0]:nearby_bb[2]]
@@ -258,19 +316,21 @@ class MaskLineAugmenter(BaseAugmenter):
         assert augment_type in self.augment_types, f'{augment_type} not supported!'
 
         im = np.array(im)[:, :, ::-1] # convert to bgr, cv2 format
+        im = np.ascontiguousarray(im)
         text_boxes = [text['bbox'] for text in texts]
+        cells = self.extract_cells(rows, cols, spans)
 
         if augment_type == 'all_rows':
-            im = self.mask_rows(im, rows, cols, spans, text_boxes, mask_type='all')
+            im = self.mask_rows(im, rows, cols, spans, text_boxes, cells, mask_type='all')
         elif augment_type == 'all_cols':
-            im = self.mask_cols(im, rows, cols, spans, text_boxes, mask_type='all')
+            im = self.mask_cols(im, rows, cols, spans, text_boxes, cells, mask_type='all')
         elif augment_type == 'all_rows_cols':
-            im = self.mask_rows(im, rows, cols, spans, text_boxes, mask_type='all')
-            im = self.mask_cols(im, rows, cols, spans, text_boxes, mask_type='all')
-        elif augment_type == 'random_rows':
-            im = self.mask_rows(im, rows, cols, spans, text_boxes, mask_type='random')
-        elif augment_type == 'random_cols':
-            im = self.mask_cols(im, rows, cols, spans, text_boxes, mask_type='random')
+            im = self.mask_rows(im, rows, cols, spans, text_boxes, cells, mask_type='all')
+            im = self.mask_cols(im, rows, cols, spans, text_boxes, cells, mask_type='all')
+        # elif augment_type == 'random_rows':
+        #     im = self.mask_rows(im, rows, cols, spans, text_boxes, mask_type='random')
+        # elif augment_type == 'random_cols':
+        #     im = self.mask_cols(im, rows, cols, spans, text_boxes, mask_type='random')
 
         return Image.fromarray(im[:, :, ::-1]), rows, cols, spans
     

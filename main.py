@@ -11,12 +11,15 @@ def main():
     # augmenter = ChangeColorAugmenter()
     # augmenter = MergeCellAugmenter()
 
-    dir = 'temp_imgs_2'
-    out_dir = 'results/temp_imgs_2'
+    # dir = 'temp_imgs_2'
+    dir = 'temp_pdf_imgs'
+    # out_dir = 'results/temp_imgs_2'
+    out_dir = 'results/temp_pdf_imgs'
+
     os.makedirs(out_dir, exist_ok=True)
     for ip in Path(dir).glob('*'):
-        # if '150' not in ip.stem:
-        #     continue
+        if '_bao_cao_chinh_268_table_' not in ip.stem:
+            continue
         if not is_image(ip):
             continue
         xp = ip.with_suffix('.xml')

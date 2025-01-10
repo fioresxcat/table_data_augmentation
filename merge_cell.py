@@ -10,7 +10,7 @@ class MergeCellAugmenter(BaseAugmenter):
         super().__init__()
         self.max_merge_horizontal = 5 # not include anchor cell yet -> max 6 cells
         self.max_merge_vertical = 5 # not include anchor cell yet -> max 6 cells
-        self.line_thickness = 5
+        self.line_thickness = 3
     
 
     # def remove_line_by_cells(self, im, merge_cells, start_row_idx, last_row_idx, last_col_idx):
