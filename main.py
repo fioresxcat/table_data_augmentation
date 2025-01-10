@@ -11,15 +11,15 @@ def main():
     # augmenter = ChangeColorAugmenter()
     # augmenter = MergeCellAugmenter()
 
-    # dir = 'temp_imgs_2'
-    dir = 'temp_pdf_imgs'
-    # out_dir = 'results/temp_imgs_2'
-    out_dir = 'results/temp_pdf_imgs'
+    dir = 'temp_imgs_2'
+    # dir = 'temp_pdf_imgs'
+    out_dir = 'results/temp_imgs_2'
+    # out_dir = 'results/temp_pdf_imgs'
 
     os.makedirs(out_dir, exist_ok=True)
     for ip in Path(dir).glob('*'):
-        if '_bao_cao_chinh_268_table_' not in ip.stem:
-            continue
+        # if 'nh-vien-da-khoa-2012_21_table_1' not in ip.stem:
+        #     continue
         if not is_image(ip):
             continue
         xp = ip.with_suffix('.xml')
@@ -48,7 +48,7 @@ def main():
 
         for i in range(1):
             print(f'Augment file {ip}, time {i}')
-            im, rows, cols, spans = augmenter.process(im, rows, cols, spans, texts, augment_type='all_rows')
+            im, rows, cols, spans = augmenter.process(im, rows, cols, spans, texts, augment_type='random_rows')
 
             # im.save(os.path.join(out_dir, f'{ip.stem}.png'))
             # boxes = rows + cols + spans
@@ -56,8 +56,8 @@ def main():
             # write_to_xml(boxes, names, im.size, os.path.join(out_dir, f'{ip.stem}.xml'))
             # pdb.set_trace()
         
-        im.save('test.png')
-        pdb.set_trace()
+        # im.save('test.png')
+        # pdb.set_trace()
 
         # draw
         # draw = ImageDraw.Draw(im)
@@ -68,10 +68,10 @@ def main():
         # for span in spans:
         #     draw.rectangle(span, outline='blue', width=2)
 
-        # im.save(os.path.join(out_dir, f'{ip.stem}.png'))
-        # boxes = rows + cols + spans
-        # names = ['row']*len(rows) + ['col']*len(cols) + ['span']*len(spans)
-        # write_to_xml(boxes, names, im.size, os.path.join(out_dir, f'{ip.stem}.xml'))
+        im.save(os.path.join(out_dir, f'{ip.stem}.png'))
+        boxes = rows + cols + spans
+        names = ['row']*len(rows) + ['col']*len(cols) + ['span']*len(spans)
+        write_to_xml(boxes, names, im.size, os.path.join(out_dir, f'{ip.stem}.xml'))
 
 
 

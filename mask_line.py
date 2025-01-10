@@ -1,7 +1,9 @@
 from base import BaseAugmenter
 from utils import *
 from scipy.stats import mode
+from change_color import find_streaks
 
+# np.random.seed(42)
 
 def get_nearby_line_bb(line_bb, line_thickness=5, axis='vertical', side='left'):
     if axis == 'vertical':
@@ -57,7 +59,7 @@ class MaskLineAugmenter(BaseAugmenter):
     def __init__(self):
         super().__init__()
         self.line_thickness = 4
-        self.augment_types = ['all_rows', 'all_cols', 'all_rows_cols']
+        self.augment_types = ['all_rows', 'all_cols', 'all_rows_cols', 'random_rows']
 
 
     def check(self, im: Image, rows, cols, spans, texts):
@@ -124,15 +126,10 @@ class MaskLineAugmenter(BaseAugmenter):
         return (total_rows == 0 or black_rows / total_rows > 0.7) and (total_cols == 0 or black_cols/total_cols > 0.7)
     
 
-    def mask_rows(self, im, rows, cols, spans, text_boxes, cells, mask_type: Literal['all', 'random']='all'):
+    def mask_rows(self, im, rows, cols, spans, text_boxes, cells, remove_indexes):
         """
             remove upper row edges
         """
-        if mask_type == 'random':
-            remove_indexes = np.random.choice(list(range(len(rows))), size=int(len(rows) * 0.5), replace=False)
-        else:
-            remove_indexes = list(range(len(rows)))
-
         rows = sorted(rows, key=lambda x: x[1])
         for row_idx, row_bb in enumerate(rows):
             if row_idx not in remove_indexes:
@@ -312,6 +309,110 @@ class MaskLineAugmenter(BaseAugmenter):
     
 
 
+    def mask_random_rows(self, im: Image, rows, cols, spans, text_boxes, cells):
+        """
+            only keep some row border lines
+            idea:
+            + find streaks
+            + augment in each streak
+            + divide streak based on length
+            + augment in each streak zone
+            condition:
+             + only apply to row streaks with no span cell inside
+
+            divide_indexes: [1, a, b, n]
+            -> zones: (1 -> a), (a+1 -> b), (b+1 -> n) (inclusive at both end)
+        """
+
+        def is_divide_indexes_valid(divide_indexes):
+            for i, index in enumerate(divide_indexes):
+                if i == len(divide_indexes) - 1:
+                    break
+                next_index = divide_indexes[i+1]
+                if i == 0 and next_index - index < 1:
+                    return False
+                elif next_index - (index+1) < 1:
+                    return False
+            return True
+
+        if len(rows) <= 1:
+            return im
+        
+        valid_row_indexes = [row_idx for row_idx, row in enumerate(rows) if is_row_valid(row, spans)]
+        cells = self.extract_cells(rows, cols, spans)
+        streaks = find_streaks(valid_row_indexes, min_len=2)
+        
+        for row_indexes in streaks:
+            num_rows = len(row_indexes)
+            if num_rows <= 3:
+                num_divide = 1
+            elif 3 < num_rows <= 6:
+                num_divide = 2
+            elif 6 < num_rows <= 15:
+                num_divide = np.random.choice([2,3], p=[0.5,0.5])
+                # num_divide = 3
+            else:
+                num_divide = 4
+            
+            if num_divide == 1:
+                divide_indexes = [row_indexes[0], row_indexes[-1]]
+            else:
+                divide_indexes = list(np.random.choice(row_indexes, size=num_divide-1))
+                divide_indexes.sort()
+                divide_indexes = [row_indexes[0]] + divide_indexes + [row_indexes[-1]]
+                num_try, max_try = 0, 10
+                while not is_divide_indexes_valid(divide_indexes) and num_try <= max_try:
+                    divide_indexes = list(np.random.choice(row_indexes, size=num_divide-1))
+                    divide_indexes.sort()
+                    divide_indexes = [row_indexes[0]] + divide_indexes + [row_indexes[-1]]
+                    num_try += 1
+                if num_try > max_try:
+                    return im
+                
+            for i in range(len(divide_indexes)-1):
+                if i == 0:
+                    start_row_index = divide_indexes[i]
+                    end_row_index = divide_indexes[i+1]
+                else:
+                    start_row_index = divide_indexes[i] + 1
+                    end_row_index = divide_indexes[i+1]
+                start_row_bb = rows[start_row_index]
+                end_row_bb = rows[end_row_index]
+                # mask all inside row borders (note: do not mask the first row - header)
+                im = self.mask_rows(im, rows, cols, spans, text_boxes, cells, remove_indexes=list(range(max(2, start_row_index+1), end_row_index+1)))  # mask upper line
+
+                # mask cols (left line)
+                for col_idx, col_bb in enumerate(cols):
+                    xmin = max(0, col_bb[0] - self.line_thickness // 2)
+                    xmax = xmin + self.line_thickness
+                    ymin, ymax = start_row_bb[1]+1, end_row_bb[3]-1
+                    line_bb = [xmin, ymin, xmax, ymax]
+                    nearby_bb = get_nearby_line_bb(line_bb=line_bb, line_thickness=self.line_thickness, axis='vertical')
+                    # check overlap with any text bbox
+                    is_overlap = False
+                    if col_idx > 0:
+                        for text_bb in text_boxes:
+                            text_xmin, text_ymin, text_xmax, text_ymax = text_bb
+                            yr1, yr2, yiou = iou_axis(text_ymin, text_ymax, nearby_bb[1], nearby_bb[3])
+                            if yr1 > 0:
+                                xr1, xr2, xiou = iou_axis(text_xmin, text_xmax, nearby_bb[0], nearby_bb[2])
+                                if xr2 > 0.5:
+                                    is_overlap = True
+                                    break
+                    if not is_overlap:
+                        nearby_region = im[nearby_bb[1]:nearby_bb[3], nearby_bb[0]:nearby_bb[2]]
+                    else:
+                        temp_bb = [col_bb[0], ymin, col_bb[2], ymax]
+                        bg_color = get_background_color(im, temp_bb)
+                        # bg_color = (255, 255, 255)
+                        h, w = nearby_bb[3] - nearby_bb[1], nearby_bb[2] - nearby_bb[0]
+                        nearby_region = np.full(shape=(h, w, 3), fill_value=bg_color, dtype=np.uint8)
+                    im[ymin:ymax, xmin:xmax] = nearby_region
+
+        return im
+    
+
+
     def process(self, im: Image, rows, cols, spans, texts, augment_type='all_rows_cols'):
         assert augment_type in self.augment_types, f'{augment_type} not supported!'
 
@@ -321,17 +422,18 @@ class MaskLineAugmenter(BaseAugmenter):
         cells = self.extract_cells(rows, cols, spans)
 
         if augment_type == 'all_rows':
-            im = self.mask_rows(im, rows, cols, spans, text_boxes, cells, mask_type='all')
+            remove_indexes = list(range(len(rows)))
+            im = self.mask_rows(im, rows, cols, spans, text_boxes, cells, remove_indexes)
         elif augment_type == 'all_cols':
-            im = self.mask_cols(im, rows, cols, spans, text_boxes, cells, mask_type='all')
+            remove_indexes = list(range(len(cols)))
+            im = self.mask_cols(im, rows, cols, spans, text_boxes, cells, remove_indexes)
         elif augment_type == 'all_rows_cols':
-            im = self.mask_rows(im, rows, cols, spans, text_boxes, cells, mask_type='all')
-            im = self.mask_cols(im, rows, cols, spans, text_boxes, cells, mask_type='all')
-        # elif augment_type == 'random_rows':
-        #     im = self.mask_rows(im, rows, cols, spans, text_boxes, mask_type='random')
+            im = self.mask_rows(im, rows, cols, spans, text_boxes, cells, remove_indexes=list(range(len(rows))))
+            im = self.mask_cols(im, rows, cols, spans, text_boxes, cells, remove_indexes=list(range(len(cols))))
+        elif augment_type == 'random_rows':
+            im = self.mask_random_rows(im, rows, cols, spans, text_boxes, cells)
         # elif augment_type == 'random_cols':
         #     im = self.mask_cols(im, rows, cols, spans, text_boxes, mask_type='random')
-
         return Image.fromarray(im[:, :, ::-1]), rows, cols, spans
     
 
