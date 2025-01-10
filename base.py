@@ -60,25 +60,62 @@ class BaseAugmenter:
         return False
     
 
+    # def texts2cells(self, texts, cells):
+    #     '''
+    #     texts: a list, format of each element is {'box': ..., 'score':..., 'roi':..., 'text':...}
+    #     cells: a list, format of each element is {'box': ..., 'relative': ...}
+    #     '''
+    #     mask = [0 for i in range(len(texts))]
+    #     for cell in cells:
+    #         cell_texts = [] 
+    #         for i, text in enumerate(texts):
+    #             if mask[i] == 1: continue
+    #             if self.is_poly_belong(text['bbox'], cell['bbox']):
+    #                 cell_texts.append(text)
+    #                 mask[i] = 1
+
+    #         # sort text
+    #         if len(cell_texts) > 0:
+    #             bbs = []
+    #             bb2text = {}
+    #             for text in cell_texts:
+    #                 bb = text['bbox']
+    #                 bbs.append(bb)
+    #                 bb2text[tuple(bb)] = text
+    #             sorted_bbs, _ = sort_bbs(bbs)
+    #             sorted_texts = [bb2text[tuple(bb)] for bb in sorted_bbs]
+    #             cell['texts'] = sorted_texts
+    #         else:
+    #             cell['texts'] = []
+    #     return cells
+    
+
     def texts2cells(self, texts, cells):
         '''
         texts: a list, format of each element is {'box': ..., 'score':..., 'roi':..., 'text':...}
         cells: a list, format of each element is {'box': ..., 'relative': ...}
         '''
-        mask = [0 for i in range(len(texts))]
         for cell in cells:
-            cell_texts = [] 
-            for i, text in enumerate(texts):
-                if mask[i] == 1: continue
-                if self.is_poly_belong(text['bbox'], cell['bbox']):
-                    cell_texts.append(text)
-                    mask[i] = 1
+            cell['texts'] = []
 
-            # sort text
-            if len(cell_texts) > 0:
+        for text in texts:
+            if text['bbox'][0] ==  text['bbox'][2] or text['bbox'][1] == text['bbox'][3]:
+                continue
+            max_cell_idx, max_r1 = None, 0
+            for cell_idx, cell in enumerate(cells):
+                r1, r2, iou = iou_bbox(text['bbox'], cell['bbox'])
+                if r1 > max_r1:
+                    max_cell_idx = cell_idx
+                    max_r1 = r1
+            if max_cell_idx is not None:
+                cells[max_cell_idx]['texts'].append(text)
+
+        # sort text
+        for cell in cells:
+            if len(cell['texts']) > 0:
                 bbs = []
                 bb2text = {}
-                for text in cell_texts:
+                for text in cell['texts']:
                     bb = text['bbox']
                     bbs.append(bb)
                     bb2text[tuple(bb)] = text

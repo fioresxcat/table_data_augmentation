@@ -75,8 +75,8 @@ class ChangeColorAugmenter(BaseAugmenter):
             'sub_header': self.change_color_sub_header,
             'sole_cells': self.change_color_sole_cells
         }
-
-        self.header_color = (10, 10, 10)  # a bit darker
+        self.offset = 10
+        self.header_color = (15, 15, 15)  # a bit darker
         self.subheader_color = (100, 100, 100) # lighter a bit
         self.gray_color = (128, 128, 128) # gray
     
@@ -86,6 +86,11 @@ class ChangeColorAugmenter(BaseAugmenter):
             name = np.random.choice(list(self.color_dict.keys()))
         return self.color_dict[name]
     
+
+
+    def random_shift_color(self, color):
+        assert len(color) == 3, f'Color must be rgb color with 3 values'
+        return (color[0]+np.random.randint(-self.offset, self.offset), color[1]+np.random.randint(-self.offset, self.offset), color[2]+np.random.randint(-self.offset, self.offset))
 
 
     def get_overlay_im(self, size, color):
@@ -208,7 +213,8 @@ class ChangeColorAugmenter(BaseAugmenter):
         """
         if not self.check(im, rows, cols, spans, texts):
             return im, rows, cols, spans
-    
+
+        im = im.convert('L').convert('RGB') # convert to gray image first
         rows = sorted(rows, key=lambda x: x[1])
         cols = sorted(cols, key=lambda x: x[0])
 
@@ -217,53 +223,58 @@ class ChangeColorAugmenter(BaseAugmenter):
         cells = self.extract_cells(rows, cols, spans)
 
         # ------------- change header color --------------
-        first_row = rows[0]
-        if is_row_valid(first_row, spans):
-            bb_w, bb_h = first_row[2] - first_row[0], first_row[3] - first_row[1]
-            overlay_im = self.get_overlay_im((bb_w, bb_h), self.header_color)
-            im = self.paste(im, overlay_im, (first_row[0], first_row[1]), alpha_factor=self.alpha_factor)
+        if np.random.rand() < 0.9:
+            first_row = rows[0]
+            if is_row_valid(first_row, spans):
+                bb_w, bb_h = first_row[2] - first_row[0], first_row[3] - first_row[1]
+                overlay_im = self.get_overlay_im((bb_w, bb_h), self.random_shift_color(self.header_color))
+                im = self.paste(im, overlay_im, (first_row[0], first_row[1]), alpha_factor=self.alpha_factor)
         
         # ------------- change subheader color ------------
         # condition: row == span will be considered as subheader
-        for row in rows:
-            for span in spans:
-                if not is_box_is_span(row, span): 
-                    continue
-                bb_w, bb_h = row[2] - row[0], row[3] - row[1]
-                overlay_im= self.get_overlay_im((bb_w, bb_h), self.subheader_color)
-                im = self.paste(im, overlay_im, (row[0], row[1]), alpha_factor=self.alpha_factor)
+        if np.random.rand() < 0.9:
+            for row in rows:
+                for span in spans:
+                    if not is_box_is_span(row, span): 
+                        continue
+                    bb_w, bb_h = row[2] - row[0], row[3] - row[1]
+                    overlay_im= self.get_overlay_im((bb_w, bb_h), self.random_shift_color(self.subheader_color))
+                    im = self.paste(im, overlay_im, (row[0], row[1]), alpha_factor=self.alpha_factor)
         
         # ------------- change sole row color -------------
-        if np.random.rand() < 0.5:
-            streaks = find_streaks(valid_row_indexes, min_len=2)
-            for row_indexes in streaks:
+        if np.random.rand() < 0.95:
+            if np.random.rand() < 0.5:
+                streaks = find_streaks(valid_row_indexes, min_len=2)
                 color1, color2 = self.get_color('gray'), self.get_color('white')
-                colors = [color1 if i%2 == 0 else color2 for i in range(len(row_indexes))]
-                assert len(colors) == len(row_indexes)
-                for row_idx, color in zip(row_indexes, colors):
-                    if row_idx == 0:
-                        continue
-                    bb = rows[row_idx]
-                    bb_w, bb_h = bb[2] - bb[0], bb[3] - bb[1]
-                    overlay_im = Image.new('RGBA', (bb_w, bb_h), color + (128,))
-                    im = self.paste(im, overlay_im, (bb[0], bb[1]), alpha_factor=self.alpha_factor)
-        
+                color1, color2 = self.random_shift_color(color1), self.random_shift_color(color2)
+                for row_indexes in streaks:
+                    colors = [color1 if i%2 == 0 else color2 for i in range(len(row_indexes))]
+                    assert len(colors) == len(row_indexes)
+                    for row_idx, color in zip(row_indexes, colors):
+                        if row_idx == 0:
+                            continue
+                        bb = rows[row_idx]
+                        bb_w, bb_h = bb[2] - bb[0], bb[3] - bb[1]
+                        overlay_im = Image.new('RGBA', (bb_w, bb_h), color + (128,))
+                        im = self.paste(im, overlay_im, (bb[0], bb[1]), alpha_factor=self.alpha_factor)
+            
 
-        # hoặc ------------- change sole cell color ---------------
-        # note: exclude first row
-        else:
-            streaks = find_streaks(valid_row_indexes, min_len=2)
-            for row_indexes in streaks:
-                for row_idx in row_indexes:
-                    if row_idx == 0:
-                        continue
-                    row_cells = [cell for cell in cells if cell['relation'][0] == row_idx and cell['relation'][2] >= 0]
-                    colors = ['white' if i%2==0 else 'gray' for i in range(len(row_cells))]
-                    for cell, color_name in zip(row_cells, colors):
-                        color = self.get_color(color_name)
-                        bb_w, bb_h = get_bb_size(cell['bbox'])
-                        overlay_im = self.get_overlay_im((bb_w, bb_h), color)
-                        im = self.paste(im, overlay_im, tuple(cell['bbox'][:2]), alpha_factor=self.alpha_factor)
+            # hoặc ------------- change sole cell color ---------------
+            # note: exclude first row
+            else:
+                streaks = find_streaks(valid_row_indexes, min_len=2)
+                color1, color2 = self.get_color('white'), self.get_color('gray')
+                color1, color2 = self.random_shift_color(color1), self.random_shift_color(color2)
+                for row_indexes in streaks:
+                    for row_idx in row_indexes:
+                        if row_idx == 0:
+                            continue
+                        row_cells = [cell for cell in cells if cell['relation'][0] == row_idx and cell['relation'][2] >= 0]
+                        colors = [color1 if i%2==0 else color2 for i in range(len(row_cells))]
+                        for cell, color in zip(row_cells, colors):
+                            bb_w, bb_h = get_bb_size(cell['bbox'])
+                            overlay_im = self.get_overlay_im((bb_w, bb_h), color)
+                            im = self.paste(im, overlay_im, tuple(cell['bbox'][:2]), alpha_factor=self.alpha_factor)
         
         return im, rows, cols, spans
 

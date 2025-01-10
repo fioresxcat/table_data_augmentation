@@ -60,13 +60,12 @@ class MaskLineAugmenter(BaseAugmenter):
         self.augment_types = ['all_rows', 'all_cols', 'random_rows', 'random_cols', 'all_rows_cols']
 
 
-    def check(self, im: Image, rows, cols, spans, text_boxes):
+    def check(self, im: Image, rows, cols, spans, texts):
         """
             check if the image is valid for this augmentation
             condition:
-             + must have border line
+             + must have black border line
         """
-        # check if all border line is black
         im = np.array(im)
         im = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)
 
@@ -93,7 +92,7 @@ class MaskLineAugmenter(BaseAugmenter):
             ymax = ymin + self.line_thickness
             line_bb = [row_bb[0], ymin, row_bb[2], ymax]
             line_image = im[ymin:ymax, row_bb[0]:row_bb[2]]
-            if is_line_black(line_image):
+            if is_image_black(line_image, min_black_percent=0.1):
                 black_rows += 1
             total_rows += 1
 
@@ -119,13 +118,11 @@ class MaskLineAugmenter(BaseAugmenter):
             xmax = xmin + self.line_thickness
             line_bb = [xmin, col_bb[1], xmax, col_bb[3]]
             line_image = im[col_bb[1]:col_bb[3], xmin:xmax]
-            if is_line_black(line_image):
+            if is_image_black(line_image, min_black_percent=0.1):
                 black_cols += 1
-            else:
-                pdb.set_trace()
             total_cols += 1
         return (total_rows == 0 or black_rows / total_rows > 0.7) and (total_cols == 0 or black_cols/total_cols > 0.7)
-
+    
 
     def mask_rows(self, im, rows, cols, spans, text_boxes, mask_type: Literal['all', 'random']='all'):
         """
@@ -258,8 +255,6 @@ class MaskLineAugmenter(BaseAugmenter):
 
 
     def process(self, im: Image, rows, cols, spans, texts, augment_type='all_rows_cols'):
-        if augment_type is None:
-            augment_type = 'all_rows_cols'
         assert augment_type in self.augment_types, f'{augment_type} not supported!'
 
         im = np.array(im)[:, :, ::-1] # convert to bgr, cv2 format

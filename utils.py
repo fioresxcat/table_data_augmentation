@@ -10,6 +10,50 @@ import shutil
 from typing_extensions import List, Dict, Tuple, Literal, Optional
 
 
+def parse_xml(xml):
+    root = ET.parse(xml).getroot()
+    objs = root.findall('object')
+    boxes, ymins, obj_names = [], [], []
+    for obj in objs:
+        obj_name = obj.find('name').text
+        box = obj.find('bndbox')
+        xmin = float(box.find('xmin').text)
+        ymin = float(box.find('ymin').text)
+        xmax = float(box.find('xmax').text)
+        ymax = float(box.find('ymax').text)
+        ymins.append(ymin)
+        boxes.append([xmin, ymin, xmax, ymax])
+        obj_names.append(obj_name)
+    indices = np.argsort(ymins)
+    boxes = [boxes[i] for i in indices]
+    boxes = [list(map(int, bb)) for bb in boxes]
+    obj_names = [obj_names[i] for i in indices]
+    return boxes, obj_names
+
+
+def write_to_xml(boxes, labels, size, xml_path):
+    w, h = size
+    root = ET.Element('annotations')
+    filename = ET.SubElement(root, 'filename')
+    filename.text = Path(xml_path).stem + '.jpg'
+    size = ET.SubElement(root, 'size')
+    width = ET.SubElement(size, 'width')
+    width.text = str(w)
+    height = ET.SubElement(size, 'height')
+    height.text = str(h)
+    depth = ET.SubElement(size, 'depth')
+    depth.text = '3'
+    for box, label in zip(boxes, labels):
+        obj = ET.SubElement(root, 'object')
+        name = ET.SubElement(obj, 'name')
+        name.text = label
+        bndbox = ET.SubElement(obj, 'bndbox')
+        xmin, ymin = ET.SubElement(bndbox, 'xmin'), ET.SubElement(bndbox, 'ymin')
+        xmax, ymax = ET.SubElement(bndbox, 'xmax'), ET.SubElement(bndbox, 'ymax')
+        xmin.text, ymin.text, xmax.text, ymax.text = map(str, box)
+    ET.ElementTree(root).write(xml_path)
+
+
 def max_left(poly):
     return min(poly[0], poly[2], poly[4], poly[6])
 
@@ -170,9 +214,6 @@ def get_bb_type(boxes, names):
             cols.append(box)
         elif name == 'span':
             spans.append(box)
-    rows.sort(key=lambda x: x[1])
-    cols.sort(key=lambda x: x[0])
-    spans.sort(key=lambda x: x[1])
     return rows, cols, spans
 
 
@@ -189,13 +230,21 @@ def get_bb_size(bb):
     return (bb[2]-bb[0], bb[3]-bb[1])
 
 
-def is_line_black(image):
+def is_image_black(image, min_black_percent=0.1):
     if len(image.shape) == 3:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     threshold = 128
     black_pixels = np.sum(image < threshold)
     white_pixels = np.sum(image >= threshold)
-    return black_pixels > 0.1 * (black_pixels+white_pixels)
+    return black_pixels > min_black_percent * (black_pixels+white_pixels)
+
+def is_image_white(image, min_white_percent=0.5):
+    if len(image.shape) == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    threshold = 128
+    black_pixels = np.sum(image < threshold)
+    white_pixels = np.sum(image >= threshold)
+    return white_pixels > min_white_percent * (black_pixels+white_pixels)
 
 
 def is_box_is_span(box, span):

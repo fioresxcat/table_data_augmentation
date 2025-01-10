@@ -1,0 +1,159 @@
+Augment file temp_pdf_imgs/0._bao_cao_chinh_267_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_267_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_257_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_257_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_258_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_258_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_257_table_1.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_257_table_1.jpg, time 1
+Fail 1 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_201_table_1.jpg, time 0
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_201_table_1.jpg, time 1
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_264_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_264_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_158_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_158_table_0.jpg, time 1
+Fail 1 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_266_table_0.jpg, time 0
+Fail 1 times
+Fail 2 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_266_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_115_table_0.jpg, time 0
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_115_table_0.jpg, time 1
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_200_table_0.jpg, time 0
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_200_table_0.jpg, time 1
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_241_table_0.jpg, time 0
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_241_table_0.jpg, time 1
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_263_table_0.jpg, time 0
+Fail 1 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_263_table_0.jpg, time 1
+Fail 1 times
+Fail 2 times
+Fail 3 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_160_table_0.jpg, time 0
+Fail 1 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_160_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_151_table_0.jpg, time 0
+Fail 1 times
+Fail 2 times
+Fail 3 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_151_table_0.jpg, time 1
+Fail 1 times
+Fail 2 times
+Fail 3 times
+Fail 4 times
+Fail 5 times
+Fail 6 times
+Fail 7 times
+Fail 8 times
+Fail 9 times
+Fail 10 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_268_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_268_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_263_table_1.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_263_table_1.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_259_table_1.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_259_table_1.jpg, time 1
+Fail 1 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_150_table_0.jpg, time 0
+Fail 1 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_150_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_261_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_261_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_248_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_248_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_256_table_0.jpg, time 0
+Fail 1 times
+Fail 2 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_256_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_201_table_0.jpg, time 0
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_201_table_0.jpg, time 1
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_253_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_253_table_0.jpg, time 1
+Fail 1 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_259_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_259_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_242_table_0.jpg, time 0
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_242_table_0.jpg, time 1
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_255_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_255_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_265_table_1.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_265_table_1.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_159_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_159_table_0.jpg, time 1
+Fail 1 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_243_table_0.jpg, time 0
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_243_table_0.jpg, time 1
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_262_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_262_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_247_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_247_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_256_table_1.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_256_table_1.jpg, time 1
+Fail 1 times
+Fail 2 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_266_table_1.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_266_table_1.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_244_table_0.jpg, time 0
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_244_table_0.jpg, time 1
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_245_table_0.jpg, time 0
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_245_table_0.jpg, time 1
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_265_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_265_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_205_table_0.jpg, time 0
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_205_table_0.jpg, time 1
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_217_table_0.jpg, time 0
+Fail 1 times
+Fail 2 times
+Fail 3 times
+Fail 4 times
+Fail 5 times
+Fail 6 times
+Fail 7 times
+Fail 8 times
+Fail 9 times
+Fail 10 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_217_table_0.jpg, time 1
+Fail 1 times
+Fail 2 times
+Fail 3 times
+Fail 4 times
+Fail 5 times
+Fail 6 times
+Fail 7 times
+Fail 8 times
+Fail 9 times
+Fail 10 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_260_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_260_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_240_table_0.jpg, time 0
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_240_table_0.jpg, time 1
+Image not valid for augment
+Augment file temp_pdf_imgs/0._bao_cao_chinh_161_table_0.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_161_table_0.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_267_table_1.jpg, time 0
+Augment file temp_pdf_imgs/0._bao_cao_chinh_267_table_1.jpg, time 1
+Augment file temp_pdf_imgs/0._bao_cao_chinh_246_table_0.jpg, time 0
+Fail 1 times
+Augment file temp_pdf_imgs/0._bao_cao_chinh_246_table_0.jpg, time 1
